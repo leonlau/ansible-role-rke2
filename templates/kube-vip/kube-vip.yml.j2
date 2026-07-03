@@ -31,7 +31,7 @@ spec:
         - manager
         env:
         - name: vip_arp
-          value: "{{ rke2_kubevip_arp_enable | default('true') | string | to_yaml | trim }}"
+          value: {{ rke2_kubevip_arp_enable | default('true') | string | to_yaml | trim }}
         - name: vip_nodename
           valueFrom:
             fieldRef:
@@ -45,27 +45,27 @@ spec:
         - name: cp_enable
           value: {{ rke2_kubevip_cp_enable | default('true') | string | to_yaml | trim }}
         - name: cp_namespace
-          value: {{ rke2_kubevip_cp_namespace | default('kube-system') | string | to_yaml | trim }}"
+          value: {{ rke2_kubevip_cp_namespace | default('kube-system') | string | to_yaml | trim }}
         - name: vip_ddns
-          value: {{ rke2_kubevip_ddns_enable | default('false') | string | to_yaml | trim }}"
+          value: {{ rke2_kubevip_ddns_enable | default('false') | string | to_yaml | trim }}
         - name: enableUPNP
-          value: {{ rke2_kubevip_upnp_enable | default('false') | string | to_yaml | trim }}"
+          value: {{ rke2_kubevip_upnp_enable | default('false') | string | to_yaml | trim }}
         - name: svc_enable
-          value: {{ rke2_kubevip_svc_enable | string | to_yaml | trim }}"
+          value: {{ rke2_kubevip_svc_enable | string | to_yaml | trim }}
         - name: svc_election
-          value: {{ rke2_kubevip_service_election_enable | string | to_yaml | trim }}"
+          value: {{ rke2_kubevip_service_election_enable | string | to_yaml | trim }}
         - name: vip_leaderelection
-          value: {{ rke2_kubevip_leaderelection_enable | default('true') | string | to_yaml | trim }}"
+          value: {{ rke2_kubevip_leaderelection_enable | default('true') | string | to_yaml | trim }}
         - name: vip_leaseduration
-          value: {{ rke2_kubevip_leaseduration | default('5') | string | to_yaml | trim }}"
+          value: {{ rke2_kubevip_leaseduration | default('5') | string | to_yaml | trim }}
         - name: vip_renewdeadline
-          value: {{ rke2_kubevip_renewdeadline | default('3') | string | to_yaml | trim }}"
+          value: {{ rke2_kubevip_renewdeadline | default('3') | string | to_yaml | trim }}
         - name: vip_retryperiod
-          value: {{ rke2_kubevip_retryperiod | default('1') | string | to_yaml | trim }}"
+          value: {{ rke2_kubevip_retryperiod | default('1') | string | to_yaml | trim }}
         - name: vip_loglevel
-          value: {{ rke2_kubevip_loglevel | default('4') | string | to_yaml | trim }}"
+          value: {{ rke2_kubevip_loglevel | default('4') | string | to_yaml | trim }}
         - name: address
-          value: "{{ rke2_api_ip | string | to_yaml | trim }}"
+          value: {{ rke2_api_ip | string | to_yaml | trim }}
         - name: prometheus_server
           value: ":{{ rke2_kubevip_metrics_port | int | to_yaml | trim }}"
         - name: lb_enable
