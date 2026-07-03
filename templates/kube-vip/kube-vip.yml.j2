@@ -77,7 +77,7 @@ spec:
           value: {{ item.value | string | to_yaml(default_flow_style=false, indent=10) -}}
 {% endif %}
 {% if item.valueFrom is defined %}
-          valueFrom: 
+          valueFrom:
             {{ item.valueFrom | to_nice_yaml(indent=10) | trim | indent(12) }}
 {% endif %}
 {% endfor %}
