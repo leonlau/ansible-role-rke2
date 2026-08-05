@@ -1,241 +1,190 @@
 ---
 argument_specs:
   main:
-    short_description: "This is the main entrypoint for the lablabs.rke2 role."
+    short_description: "lablabs.rke2 角色的主入口。"
     description:
-      - "This role installs and configures RKE2 Kubernetes distribution."
-      - "It is designed to be used in a standalone mode or as a part of a larger playbook."
-      - "It can be used to deploy RKE2 in HA mode with Keepalived or kube-vip."
-      - "Role can be used to deploy RKE2 in airgap mode."
-      - "Also you can update the RKE2 Kubernetes cluster by setting newer rke2_version variable."
+      - "此角色用于安装和配置 RKE2 Kubernetes 发行版。"
+      - "既可独立使用，也可作为大型 Playbook 的一部分使用。"
+      - "支持使用 Keepalived 或 kube-vip 部署高可用 RKE2。"
+      - "支持在离线环境中部署 RKE2。"
+      - "可通过设置较新的 rke2_version 变量升级 RKE2 集群。"
     author:
       - Michal Muransky
     options:
-      rke2_allow_downgrade:
-        type: bool
-        default: false
-        description: "Determines whether downgrades of the RKE2 version are allowed"
-
       rke2_type:
         type: str
         choices: ["server", "agent"]
         default: "{{ 'server' if inventory_hostname in groups[rke2_servers_group_name] else 'agent' if inventory_hostname in groups[rke2_agents_group_name] }}"
-        description: "The node type - server or agent"
+        description: "节点类型：server 或 agent。"
 
       rke2_ha_mode:
         type: bool
         default: false
-        description: "Deploy the control plane in HA mode"
+        description: "以高可用模式部署控制平面。"
 
       rke2_ha_mode_keepalived:
         type: bool
         default: true
-        description: "Install and configure Keepalived on Server nodes. Can be disabled if you are using pre-configured Load Balancer"
+        description: "在 Server 节点安装并配置 Keepalived；使用已有负载均衡器时可禁用。"
 
       rke2_ha_mode_kubevip:
         type: bool
         default: false
-        description: "Install and configure kube-vip LB and VIP for cluster. rke2_ha_mode_keepalived needs to be false"
+        description: "为集群安装并配置 kube-vip API VIP；使用时 rke2_ha_mode_keepalived 必须为 false。"
 
       rke2_api_ip:
         type: str
         default: "{{ hostvars[groups[rke2_servers_group_name].0].ansible_facts['default_ipv4']['address'] | default(hostvars[groups[rke2_servers_group_name].0].ansible_facts['default_ipv6']['address'] ) }}"
-        description: "Kubernetes API and RKE2 registration IP address. The default Address is the IPv4 of the Server/Master node. In HA mode choose a static IP which will be set as VIP in keepalived. Or if the keepalived is disabled, use IP address of your LB."
+        description: "Kubernetes API 和 RKE2 注册地址。默认为首个 Server 节点的 IPv4；高可用模式下应设置为 Keepalived、kube-vip 或已有负载均衡器使用的静态 VIP。"
 
       rke2_api_private_ip:
         type: str
         required: false
-        description: "Optional option for RKE2 Server to listen on a private IP address on port 9345"
+        description: "可选：RKE2 Server 在 9345 端口监听的私有 IP 地址。"
 
       rke2_api_private_port:
         type: int
         default: 9345
-        description: "Optional option for RKE2 Server to listen on a private port"
+        description: "可选：RKE2 Server 监听的私有端口。"
 
       rke2_api_cidr:
         type: int
         required: false
-        description: "Optional option for kubevip IP subnet"
+        description: "可选：kube-vip 的 IP 子网前缀长度。"
 
       rke2_interface:
         type: str
         required: false
-        description: "Optional option for kubevip"
+        description: "可选：kube-vip 使用的网络接口。"
 
       rke2_bind_address:
         type: str
         required: false
-        description: "Optional option for IPv4/IPv6 addresses to advertise for node"
-
-      rke2_loadbalancer_ip_range:
-        type: dict
-        default: {}
-        description: "kubevip load balancer IP range"
-
-      rke2_kubevip_cloud_provider_enable:
-        type: bool
-        default: true
-        description: "Install kubevip cloud provider if rke2_ha_mode_kubevip is true"
-
-      rke2_kubevip_svc_enable:
-        type: bool
-        default: true
-        description: "Enable kube-vip to watch Services of type LoadBalancer"
+        description: "可选：节点通告的 IPv4/IPv6 绑定地址。"
 
       rke2_kubevip_image:
         type: str
         default: "ghcr.io/kube-vip/kube-vip:v0.9.2"
-        description: "Specify which image is used for kube-vip container"
-
-      rke2_kubevip_cloud_provider_image:
-        type: str
-        default: "ghcr.io/kube-vip/kube-vip-cloud-provider:v0.0.12"
-        description: "Specify which image is used for kube-vip cloud provider container"
+        description: "指定 kube-vip 容器镜像。"
 
       rke2_kubevip_ipvs_lb_enable:
         type: bool
         default: false
-        description: "Enable kube-vip IPVS load balancer for control plane"
-
-      rke2_kubevip_service_election_enable:
-        type: bool
-        default: true
-        description: "Enable leader election per service for kube-vip"
+        description: "为控制平面启用 kube-vip IPVS 负载均衡。"
 
       rke2_kubevip_leaseduration:
         type: int
         default: 5
-        description: "Change parameters for leader election - see upstream install flags link below"
+        description: "调整 leader election 租约持续时间，详见上游安装参数。"
 
       rke2_kubevip_renewdeadline:
         type: int
         default: 3
-        description: "Change parameters for leader election - see upstream install flags link below"
+        description: "调整 leader election 续约截止时间，详见上游安装参数。"
 
       rke2_kubevip_retryperiod:
         type: int
         default: 1
-        description: "Change parameters for leader election - see upstream install flags link below"
+        description: "调整 leader election 重试周期，详见上游安装参数。"
 
       rke2_kubevip_loglevel:
         type: int
         default: 4
-        description: "Change parameters for leader election - see upstream install flags link below"
+        description: "设置 kube-vip 日志级别。"
 
       rke2_kubevip_args:
         type: list
         default: []
         elements: dict
-        description: "A list of kube-vip flags. All flags can be found here https://kube-vip.io/docs/installation/flags/"
+        description: "kube-vip 参数列表，完整参数参见 https://kube-vip.io/docs/installation/flags/。"
 
       rke2_kubevip_daemonset_resources:
         type: dict
         default: {}
         required: false
-        description: "Resources for kubevip DaemonSet Pods"
-
-      rke2_kubevip_cloud_controller_resources:
-        type: dict
-        default: {}
-        required: false
-        description: "Resources for kubevip cloud controller Pods"
+        description: "kube-vip DaemonSet Pod 的资源配置。"
 
       rke2_kubevip_metrics_port:
         type: int
         default: 2112
-        description: "Prometheus metrics port for kube-vip"
+        description: "kube-vip 的 Prometheus 指标端口。"
 
       rke2_kubevip_arp_enable:
         type: bool
         default: true
-        description: "Enable ARP for kube-vip"
+        description: "为 kube-vip 启用 ARP 模式。"
 
       rke2_kubevip_cp_enable:
         type: bool
         default: true
-        description: "Enable kube-vip control plane load balancer"
+        description: "启用 kube-vip 控制平面 VIP。"
 
       rke2_kubevip_cp_namespace:
         type: str
         default: "kube-system"
-        description: "Namespace for kube-vip control plane load balancer"
-
-      rke2_kubevip_ddns_enable:
-        type: bool
-        default: false
-        description: "Enable kube-vip DDNS functionality"
-
-      rke2_kubevip_upnp_enable:
-        type: bool
-        default: false
-        description: "Enable kube-vip UPnP functionality"
+        description: "kube-vip 控制平面组件所在的命名空间。"
 
       rke2_kubevip_leaderelection_enable:
         type: bool
         default: true
-        description: "Enable kube-vip leader election"
+        description: "启用 kube-vip leader election。"
 
       rke2_additional_sans:
         type: list
         default: []
-        description: "Add additional SANs in k8s API TLS cert"
+        description: "为 Kubernetes API TLS 证书添加额外 SAN。"
 
       rke2_cluster_domain:
         type: str
         required: false
-        description: "Configure cluster domain"
+        description: "配置集群域名。"
 
       rke2_apiserver_dest_port:
         type: int
         default: 6443
-        description: "API Server destination port"
+        description: "API Server 目标端口。"
 
       rke2_server_node_taints:
         type: list
         default: []
         elements: str
-        description: "Server nodes taints"
+        description: "Server 节点污点。"
 
       rke2_agent_node_taints:
         type: list
         default: []
         elements: str
-        description: "Agent nodes taints"
+        description: "Agent 节点污点。"
 
       rke2_token:
         type: str
         default: "defaultSecret12345"
-        description: "Pre-shared secret token that other server or agent nodes will register with when connecting to the cluster"
+        description: "其他 Server 或 Agent 节点注册并加入集群时使用的预共享令牌。"
 
       rke2_version:
         type: str
         default: "v1.25.3+rke2r1"
-        description: "RKE2 version"
+        description: "要安装的 RKE2 版本。"
 
       rke2_channel_url:
         type: str
         default: "https://update.rke2.io/v1-release/channels"
-        description: "URL to RKE2 repository"
+        description: "RKE2 版本通道服务地址。"
 
       rke2_install_bash_url:
         type: str
         default: "https://get.rke2.io"
-        description: "URL to RKE2 install bash script"
+        description: "RKE2 安装脚本地址。"
 
       rke2_data_path:
         type: str
         default: "/var/lib/rancher/rke2"
-        description: "Local data directory for RKE2"
-
-      rke2_artifact_url:
-        type: str
-        default: "https://github.com/rancher/rke2/releases/download/"
-        description: "Default URL to fetch artifacts"
+        description: "RKE2 本地数据目录。"
 
       rke2_artifact_path:
         type: str
         default: "/rke2/artifact"
-        description: "Local path to store artifacts"
+        description: "目标节点上存放 RKE2 构件的路径。"
 
       rke2_artifact:
         type: list
@@ -246,317 +195,283 @@ argument_specs:
             "rke2-images.linux-{{ rke2_architecture }}.tar.zst",
           ]
         elements: str
-        description: "Airgap required artifacts"
+        description: "离线安装所需的 RKE2 构件列表。"
 
       rke2_artifact_fetch_timeout:
         type: int
         default: 30
-        description: "Timeout for fetching artifacts in seconds"
+        description: "下载构件的超时时间，单位为秒。"
 
       rke2_airgap_mode:
         type: bool
         default: false
-        description: "Changes the deploy strategy to install based on local artifacts"
-
-      rke2_airgap_implementation:
-        type: str
-        choices: ["download", "copy", "exists"]
-        default: "download"
-        description: "Airgap implementation type - download, copy or exists"
+        description: "启用基于本地构件的离线部署策略。"
 
       rke2_airgap_copy_sourcepath:
         type: str
         default: "local_artifacts"
-        description: "Local source path where artifacts are stored"
+        description: "Ansible 控制端存放离线构件的本地源路径。"
 
       rke2_airgap_copy_additional_tarballs:
         type: list
         default: []
         elements: str
-        description: "Tarball images for additional components to be copied from rke2_airgap_copy_sourcepath to the nodes"
+        description: "从 rke2_airgap_copy_sourcepath 复制到节点的附加组件镜像包列表。"
 
       rke2_tarball_images_path:
         type: str
         default: "{{ rke2_data_path }}/agent/images"
-        description: "Destination for airgap additional images tarballs"
+        description: "节点上存放离线附加镜像包的目标目录。"
 
       rke2_architecture:
         type: str
         choices: ["amd64", "s390x"]
         default: "amd64"
 
-        description: "Architecture to be downloaded, currently there are releases for amd64 and s390x"
+        description: "要下载的系统架构，当前发行版支持 amd64 和 s390x。"
 
       rke2_install_script_dir:
         type: str
         default: "/var/tmp"
-        description: "Destination directory for RKE2 installation script"
+        description: "RKE2 安装脚本的目标目录。"
 
       rke2_channel:
         type: str
         default: "stable"
-        description: "RKE2 channel"
+        description: "RKE2 发布通道。"
 
       rke2_disable:
         type: list
         default: []
         elements: str
-        description: "Do not deploy packaged components and delete any deployed components"
+        description: "不部署指定的 RKE2 内置组件，并删除已部署的对应组件。"
 
       disable_kube_proxy:
         type: bool
         default: false
-        description: "Option to disable kube-proxy"
-
-      rke2_disable_cloud_controller:
-        type: bool
-        default: false
-        description: "Option to disable builtin cloud controller when working with aws, azure, gce etc"
-
-      rke2_cloud_provider_name:
-        type: str
-        default: "external"
-        description: "Cloud provider to use for the cluster (aws, azure, gce, openstack, vsphere, external)"
+        description: "是否禁用 kube-proxy。"
 
       rke2_custom_manifests:
         type: list
         default: []
         elements: str
-        description: "Path to custom manifests deployed during the RKE2 installation"
+        description: "RKE2 安装期间部署的自定义 Manifest 路径列表。"
 
       rke2_static_pods:
         type: list
         default: []
         elements: str
-        description: "Path to static pods deployed during the RKE2 installation"
+        description: "RKE2 安装期间部署的静态 Pod 清单路径列表。"
 
       rke2_custom_registry_mirrors:
         type: list
         default: []
         elements: str
-        description: "Configure custom Containerd Registry"
+        description: "配置自定义 Containerd 镜像仓库镜像源。"
 
       rke2_custom_registry_configs:
         type: list
         default: []
         elements: str
-        description: "Configure custom Containerd Registry additional configuration"
+        description: "配置自定义 Containerd 镜像仓库的附加选项。"
 
       rke2_custom_registry_path:
         type: str
         default: "templates/registries.yaml.j2"
-        description: "Path to Container registry config file template"
+        description: "Containerd 镜像仓库配置模板路径。"
 
       rke2_config:
         type: str
         default: "templates/config.yaml.j2"
-        description: "Path to RKE2 config file template"
+        description: "RKE2 配置文件模板路径。"
 
       rke2_etcd_snapshot_source_dir:
         type: str
         default: "etcd_snapshots"
-        description: "Etcd snapshot source directory"
+        description: "etcd 快照源目录。"
 
       rke2_etcd_snapshot_file:
         type: str
         default: ""
-        description: "Etcd snapshot file name. When the file name is defined, the etcd will be restored on initial deployment Ansible run."
+        description: "etcd 快照文件名。设置后将在首次执行 Ansible 部署时恢复 etcd。"
 
       rke2_etcd_snapshot_destination_dir:
         type: str
         default: "{{ rke2_data_path }}/server/db/snapshots"
-        description: "Etcd snapshot location"
+        description: "节点上的 etcd 快照目录。"
 
       rke2_etcd_snapshot_schedule:
         type: str
         default: "0 */6 * * *"
-        description: "Etcd snapshot schedule in cron format"
+        description: "cron 格式的 etcd 快照计划。"
 
       rke2_etcd_snapshot_s3_options:
         type: dict
         required: false
-        description: "Etcd snapshot s3 options"
+        description: "etcd 快照的 S3 存储配置。"
 
       rke2_snapshotter:
         type: str
-        default: "{{ rke2_snapshooter }}"
-        description: "Override default containerd snapshotter"
-
-      rke2_snapshooter:
-        type: str
         default: "overlayfs"
-        description: "Legacy variable that only exists to keep backward compatibility with previous configurations"
+        description: "覆盖默认的 Containerd snapshotter。"
 
       rke2_cni:
         type: list
-        default: ["canal"]
+        default: ["cilium"]
         elements: str
-        description: "Deploy RKE2 with default CNI canal"
+        choices:
+          - cilium
+        description: "使用 Cilium 部署 RKE2；此角色不支持其他 CNI。"
 
       rke2_cis_profile:
         type: str
         default: ""
-        description: "Validate system configuration against the selected benchmark"
+        description: "根据选定的安全基准验证系统配置。"
 
       rke2_download_kubeconf:
         type: bool
         default: false
-        description: "Download Kubernetes config file to the Ansible controller"
+        description: "将 Kubernetes kubeconfig 下载到 Ansible 控制端。"
 
       rke2_download_kubeconf_file_name:
         type: str
         default: "rke2.yaml"
-        description: "Name of the Kubernetes config file will be downloaded to the Ansible controller"
+        description: "下载到 Ansible 控制端的 kubeconfig 文件名。"
 
       rke2_download_kubeconf_path:
         type: str
         default: "/tmp"
-        description: "Destination directory where the Kubernetes config file will be downloaded to the Ansible controller"
+        description: "Ansible 控制端存放 kubeconfig 的目标目录。"
 
       rke2_cluster_group_name:
         type: str
         default: "k8s_cluster"
-        description: "Default Ansible Inventory Group name for RKE2 cluster"
+        description: "RKE2 集群的默认 Ansible Inventory 组名。"
 
       rke2_servers_group_name:
         type: str
         default: "masters"
-        description: "Default Ansible Inventory Group name for RKE2 Servers"
+        description: "RKE2 Server 节点的默认 Ansible Inventory 组名。"
 
       rke2_agents_group_name:
         type: str
         default: "workers"
-        description: "Default Ansible Inventory Group name for RKE2 Agents"
+        description: "RKE2 Agent 节点的默认 Ansible Inventory 组名。"
 
       rke2_kube_apiserver_args:
         type: list
         default: []
         elements: str
         required: false
-        description: "A list of Kubernetes API server flags"
+        description: "Kubernetes API Server 参数列表。"
 
       k8s_node_label:
         type: list
         default: []
         elements: str
         required: false
-        description: "List of Node labels"
+        description: "节点标签列表。"
 
       rke2_server_options:
         type: list
         default: []
         elements: str
         required: false
-        description: "Additional RKE2 server configuration options. You could find the flags at https://docs.rke2.io/reference/server_config"
+        description: "附加 RKE2 Server 配置，参数参见 https://docs.rke2.io/reference/server_config。"
 
       rke2_agent_options:
         type: list
         default: []
         elements: str
         required: false
-        description: "Additional RKE2 agent configuration options. You could find the flags at https://docs.rke2.io/reference/agent_config"
+        description: "附加 RKE2 Agent 配置，参数参见 https://docs.rke2.io/reference/agent_config。"
 
       rke2_environment_options:
         type: list
         default: []
         elements: str
         required: false
-        description: "Additional RKE2 environment configuration options. All flags can be found here https://docs.rke2.io/advanced#configuring-an-http-proxy"
+        description: "附加 RKE2 环境变量配置，代理配置参见 https://docs.rke2.io/advanced#configuring-an-http-proxy。"
 
       rke2_kube_controller_manager_arg:
         type: list
         default: []
         elements: str
         required: false
-        description: "Customize default kube-controller-manager arguments."
+        description: "自定义 kube-controller-manager 参数。"
 
       rke2_kube_scheduler_arg:
         type: list
         default: []
         elements: str
         required: false
-        description: "Customize default kube-scheduler arguments."
-
-      rke2_ingress_controller:
-        type: raw
-        default: "ingress-nginx"
-        description: "Ingress controller to use (ingress-nginx, traefik, or none) (string or array)"
-
-      rke2_ingress_nginx_values:
-        type: dict
-        default: {}
-        description: "Configure nginx via HelmChartConfig"
+        description: "自定义 kube-scheduler 参数。"
 
       rke2_traefik_values:
         type: dict
         default: {}
-        description: "Configure traefik via HelmChartConfig"
+        description: "通过 HelmChartConfig 配置 Traefik。"
 
       rke2_drain_node_during_upgrade:
         type: bool
         default: false
-        description: "Cordon, drain the node which is being upgraded. Uncordon the node once the RKE2 upgraded"
+        description: "升级前封锁并驱逐节点，RKE2 升级完成后解除封锁。"
 
       rke2_drain_additional_args:
         type: str
         default: ""
-        description: "Additional args that will be passed to the kubectl drain command e.g. --pod-selector"
+        description: "传递给 kubectl drain 的附加参数，例如 --pod-selector。"
 
       rke2_wait_for_all_pods_to_be_ready:
         type: bool
         default: false
-        description: "Wait for all pods to be ready after rke2-service restart during rolling restart."
+        description: "滚动重启期间，在 RKE2 服务重启后等待所有 Pod Ready。"
 
       rke2_wait_for_all_pods_to_be_healthy:
         type: bool
         default: false
-        description: "Wait for all pods to have a status of running or succeeded after rke2-service restart during rolling restart."
+        description: "滚动重启期间，在 RKE2 服务重启后等待所有 Pod 进入 Running 或 Succeeded 状态。"
 
       rke2_wait_for_all_pods_to_be_healthy_args:
         type: str
         default: "--for=condition=Ready -A --all pod --field-selector=metadata.namespace!=kube-system,status.phase!=Succeeded"
-        description: "The args passed to the kubectl wait command"
+        description: "传递给 kubectl wait 命令的参数。"
 
       rke2_debug:
         type: bool
         default: false
-        description: "Enable debug mode (rke2-service)"
+        description: "启用 RKE2 服务调试模式。"
 
       rke2_kubelet_config:
         type: dict
         default: {}
-        description: "Customize kubelet config using KubeletConfiguration"
+        description: "使用 KubeletConfiguration 自定义 kubelet 配置。"
 
       rke2_kube_proxy_arg:
         type: list
         default: []
         elements: str
         required: false
-        description: "Customize default kube-proxy arguments."
+        description: "自定义 kube-proxy 参数。"
 
       rke2_kube_proxy_extra_mount:
         type: list
         default: []
         elements: str
         required: false
-        description: "Customize default kube-proxy extra mounts."
+        description: "自定义 kube-proxy 附加挂载。"
 
       rke2_node_name:
         type: str
         default: "{{ inventory_hostname }}"
-        description: "The value for the node-name configuration item"
+        description: "node-name 配置项的值。"
 
       rke2_cluster_cidr:
         type: list
         default: ["10.42.0.0/16"]
-        description: "Default pod network range for rke2"
+        description: "RKE2 默认 Pod 网络 CIDR。"
 
       rke2_service_cidr:
         type: list
         default: ["10.43.0.0/16"]
-        description: "Default service network range for rke2"
-
-      rke2_selinux:
-        type: bool
-        default: false
-        description: "Enable SELinux for rke2"
+        description: "RKE2 默认 Service 网络 CIDR。"

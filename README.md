@@ -38,12 +38,6 @@ This is a copy of `defaults/main.yml`
 
 ```yaml
 ---
-# Determines whether downgrades of the RKE2 version are allowed.
-# If set to `false`, the role will prevent downgrades unless explicitly permitted.
-# Set to `true` to allow downgrades of the RKE2 version.
-# Note: This setting is ignored in Ansible check mode, and the related prevention task will be skipped.
-rke2_allow_downgrade: false
-
 # The node type - server or agent
 rke2_type: "{{ 'server' if inventory_hostname in groups[rke2_servers_group_name] else 'agent' if inventory_hostname in groups[rke2_agents_group_name] }}"
 
@@ -75,34 +69,13 @@ rke2_api_private_port: 9345
 # optional option for IPv4/IPv6 addresses to advertise for node
 # rke2_bind_address: "{{ hostvars[inventory_hostname]['ansible_' + rke2_interface]['ipv4']['address'] }}"
 
-# kubevip load balancer IP range
-rke2_loadbalancer_ip_range: {}
-#  range-global: 192.168.1.50-192.168.1.100
-#  cidr-finance: 192.168.0.220/29,192.168.0.230/29
-
-# Install kubevip cloud provider if rke2_ha_mode_kubevip is true
-rke2_kubevip_cloud_provider_enable: true
-
-# Enable kube-vip to watch Services of type LoadBalancer
-rke2_kubevip_svc_enable: true
-
 # Specify which image is used for kube-vip container
 rke2_kubevip_image: ghcr.io/kube-vip/kube-vip:v0.9.2
-
-# Specify which image is used for kube-vip cloud provider container
-rke2_kubevip_cloud_provider_image: ghcr.io/kube-vip/kube-vip-cloud-provider:v0.0.12
 
 # Enable kube-vip IPVS load balancer for control plane
 rke2_kubevip_ipvs_lb_enable: false
 # Enable layer 4 load balancing for control plane using IPVS kernel module
 # Must use kube-vip version 0.4.0 or later
-
-rke2_kubevip_service_election_enable: true
-# By default ARP mode provides a HA implementation of a VIP (your service IP address) which will receive traffic on the kube-vip leader.
-# To circumvent this kube-vip has implemented a new function which is "leader election per service",
-# instead of one node becoming the leader for all services an election is held across all kube-vip instances and the leader from that election becomes the holder of that service. Ultimately,
-# this means that every service can end up on a different node when it is created in theory preventing a bottleneck in the initial deployment.
-# minimum kube-vip version 0.5.0
 
 # (Optional) Change parameters for leader election - see upstream install flags link below
 # rke2_kubevip_leaseduration: 5
@@ -130,22 +103,11 @@ rke2_kubevip_cp_enable: true
 # Namespace for kube-vip control plane load balancer
 rke2_kubevip_cp_namespace: "kube-system"
 
-# Enable kube-vip DDNS for control plane load balancer
-rke2_kubevip_ddns_enable: false
-
-# Enable kube-vip UPnP for control plane load balancer
-rke2_kubevip_upnp_enable: false
-
 # Enable kube-vip leader election for control plane load balancer
 rke2_kubevip_leaderelection_enable: true
 
 # Resources for kubevip DaemonSet Pods.
 rke2_kubevip_daemonset_resources: {}
-#  requests:
-#    memory: 40Mi
-
-# Resources for kubevip cloud controller Pods.
-rke2_kubevip_cloud_controller_resources: {}
 #  requests:
 #    memory: 40Mi
 
@@ -181,9 +143,6 @@ rke2_install_bash_url: https://get.rke2.io
 # Local data directory for RKE2
 rke2_data_path: /var/lib/rancher/rke2
 
-# Default URL to fetch artifacts
-rke2_artifact_url: https://github.com/rancher/rke2/releases/download/
-
 # Local path to store artifacts
 rke2_artifact_path: /rke2/artifact
 
@@ -198,12 +157,6 @@ rke2_artifact_fetch_timeout: 30
 
 # Changes the deploy strategy to install based on local artifacts
 rke2_airgap_mode: false
-
-# Airgap implementation type - download, copy or exists
-# - 'download' will fetch the artifacts on each node,
-# - 'copy' will transfer local files in 'rke2_artifact' to the nodes,
-# - 'exists' assumes 'rke2_artifact' files are already stored in 'rke2_artifact_path'
-rke2_airgap_implementation: download
 
 # Local source path where artifacts are stored
 rke2_airgap_copy_sourcepath: local_artifacts
@@ -231,20 +184,11 @@ rke2_install_script_dir: /var/tmp
 rke2_channel: stable
 
 # Do not deploy packaged components and delete any deployed components
-# Valid items: rke2-canal, rke2-coredns, rke2-ingress-nginx, rke2-metrics-server
+# Common items: rke2-coredns, rke2-metrics-server
 rke2_disable: []
 
 # Option to disable kube-proxy
 disable_kube_proxy: false
-
-# Option to disable builtin cloud controller when working with aws, azure, gce etc
-# For onprem environment, this should remain false and keep rke2_cloud_provider_name as "external"
-# https://docs.k3s.io/networking/networking-services#deploying-an-external-cloud-controller-manager (same for RKE2)
-rke2_disable_cloud_controller: false
-
-# Cloud provider to use for the cluster (aws, azure, gce, openstack, vsphere, external)
-# applicable only if rke2_disable_cloud_controller is true
-rke2_cloud_provider_name: "external"
 
 # Path to custom manifests deployed during the RKE2 installation
 # It is possible to use Jinja2 templating in the manifests
@@ -306,11 +250,10 @@ rke2_etcd_snapshot_destination_dir: "{{ rke2_data_path }}/server/db/snapshots"
   # timeout: "" # optional - S3 timeout (default: 5m0s)
   # s3_retention: 5 # optional - Number of snapshots in S3 to retain (default: 5)
 # Override default containerd snapshotter
-rke2_snapshotter: "{{ rke2_snapshooter }}"
-rke2_snapshooter: overlayfs # legacy variable that only exists to keep backward compatibility with previous configurations
+rke2_snapshotter: overlayfs
 
-# Deploy RKE2 with default CNI canal
-rke2_cni: [canal]
+# Deploy RKE2 with Cilium (the only supported CNI in this role)
+rke2_cni: [cilium]
 
 # Validate system configuration against the selected benchmark
 # (Supported value is "cis-1.23" or eventually "cis-1.6" if you are running RKE2 prior 1.25 or "cis" for rke2 1.30+)
@@ -369,24 +312,11 @@ rke2_agents_group_name: workers
 # rke2_kube_scheduler_arg:
 #   - "bind-address=0.0.0.0"
 
-# Ingress controller selection - single value or list of values. Supported: ingress-nginx, traefik, none
-# NOTE: The default value will change to `traefik` in role release 1.52.0
-rke2_ingress_controller: ingress-nginx
-
-# (Optional) Configure nginx via HelmChartConfig: https://docs.rke2.io/networking/networking_services#nginx-ingress-controller
-# rke2_ingress_nginx_values:
-#   controller:
-#     config:
-#       use-forwarded-headers: "true"
-rke2_ingress_nginx_values: {}
-
 # (Optional) Configure traefik via HelmChartConfig: https://docs.rke2.io/networking/networking_services
 # rke2_traefik_values:
-#   providers:
-#     kubernetesIngressNginx:
-#       enabled: true
-#       ingressClass: "rke2-ingress-nginx-migration"
-#       controllerClass: 'rke2.cattle.io/ingress-nginx-migration'
+#   logs:
+#     general:
+#       level: "INFO"
 rke2_traefik_values: {}
 
 # Cordon, drain the node which is being upgraded. Uncordon the node once the RKE2 upgraded
@@ -437,8 +367,6 @@ rke2_cluster_cidr:
 rke2_service_cidr:
   - 10.43.0.0/16
 
-# Enable SELinux for rke2
-rke2_selinux: false
 ```
 
 ## Inventory file example
@@ -488,7 +416,7 @@ This playbook will update an already deployed RKE2 cluster (inventory contains o
 
 ```
 
-This playbook will deploy RKE2 to a cluster with one server(master) and several agent(worker) nodes in air-gapped mode using the `copy` implementation, which transfers local artifact files from the Ansible controller to the target nodes. It will use Multus and Calico as CNI
+This playbook will deploy RKE2 to a cluster with one server(master) and several agent(worker) nodes in air-gapped mode using the `copy` implementation, which transfers local artifact files from the Ansible controller to the target nodes. It uses Cilium as the CNI.
 
 ```yaml
 - name: Deploy RKE2
@@ -496,17 +424,14 @@ This playbook will deploy RKE2 to a cluster with one server(master) and several 
   become: yes
   vars:
     rke2_airgap_mode: true
-    rke2_airgap_implementation: copy
     rke2_cni:
-      - multus
-      - calico
+      - cilium
     rke2_artifact:
       - sha256sum-{{ rke2_architecture }}.txt
       - rke2.linux-{{ rke2_architecture }}.tar.gz
       - rke2-images.linux-{{ rke2_architecture }}.tar.zst
     rke2_airgap_copy_additional_tarballs:
-      - rke2-images-multus.linux-{{ rke2_architecture }}
-      - rke2-images-calico.linux-{{ rke2_architecture }}
+      - rke2-images-cilium.linux-{{ rke2_architecture }}.tar.zst
   roles:
      - role: lablabs.rke2
 
@@ -529,7 +454,7 @@ This playbook will deploy RKE2 to a cluster with HA server(master) control-plane
 
 ```
 
-This playbook will deploy RKE2 to a cluster with HA server(master) control-plane and several agent(worker) nodes using kube-vip for VIP management and LoadBalancer services, and Traefik as the ingress controller instead of the default ingress-nginx. It will also download the Kubernetes config file to the local machine.
+This playbook will deploy RKE2 to a cluster with HA server(master) control-plane and several agent(worker) nodes using kube-vip for the Kubernetes API VIP, with Traefik as the ingress controller. It will also download the Kubernetes config file to the local machine.
 
 ```yaml
 - name: Deploy RKE2
@@ -540,9 +465,6 @@ This playbook will deploy RKE2 to a cluster with HA server(master) control-plane
     rke2_ha_mode_keepalived: false
     rke2_ha_mode_kubevip: true
     rke2_api_ip: 192.168.123.100
-    rke2_loadbalancer_ip_range:
-      range-global: 192.168.123.200-192.168.123.250
-    rke2_ingress_controller: traefik
     rke2_traefik_values:
       logs:
         general:
@@ -577,10 +499,6 @@ While changing server token is problematic, agent token can be rotated at will, 
 If the playbook starts to hang at the `Start RKE2 service on the rest of the nodes` task and then fails at the `Wait for remaining nodes to be ready` task, you probably have some limitations on your nodes' network.
 
 Please check the required *Inbound Rules for RKE2 Server Nodes* at the following link: <https://docs.rke2.io/install/requirements/#networking>.
-
-### RKE2 upgrade playbook failed due to an interrupted upgrade
-
-In case the new RKE2 version was installed but not started, rerun the playbook with the variable `rke2_allow_downgrade: true` to bypass the downgrade prevention check.
 
 ## License
 

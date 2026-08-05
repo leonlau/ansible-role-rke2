@@ -46,14 +46,8 @@ spec:
           value: "{{ rke2_kubevip_cp_enable | default('true') | to_json }}"
         - name: cp_namespace
           value: "{{ rke2_kubevip_cp_namespace | default('kube-system') }}"
-        - name: vip_ddns
-          value: "{{ rke2_kubevip_ddns_enable | default('false') | to_json  }}"
-        - name: enableUPNP
-          value: "{{ rke2_kubevip_upnp_enable | default('false') | to_json  }}"
         - name: svc_enable
-          value: "{{ rke2_kubevip_svc_enable | to_json }}"
-        - name: svc_election
-          value: "{{ rke2_kubevip_service_election_enable | to_json }}"
+          value: "false"
         - name: vip_leaderelection
           value: "{{ rke2_kubevip_leaderelection_enable | default('true') | to_json }}"
         - name: vip_leaseduration
