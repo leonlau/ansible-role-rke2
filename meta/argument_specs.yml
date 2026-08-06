@@ -163,7 +163,7 @@ argument_specs:
 
       rke2_version:
         type: str
-        default: "v1.25.3+rke2r1"
+        default: "v1.36.2+rke2r1"
         description: "要安装的 RKE2 版本。"
 
       rke2_channel_url:

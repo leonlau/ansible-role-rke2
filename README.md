@@ -131,7 +131,7 @@ rke2_agent_node_taints: []
 rke2_token: defaultSecret12345
 
 # RKE2 version
-rke2_version: v1.25.3+rke2r1
+rke2_version: v1.36.2+rke2r1
 
 # URL to RKE2 repository
 rke2_channel_url: https://update.rke2.io/v1-release/channels
@@ -392,6 +392,33 @@ workers
 
 ## Playbook example
 
+### 使用 Makefile 部署
+
+先修改 `inventory/hosts.yml` 中的节点地址，以及 `config/cluster.yml` 中的 API VIP 和集群令牌。然后执行：
+
+```bash
+# 下载并校验 RKE2 Core（已包含 Traefik）和 Cilium 离线构件
+make artifacts RKE2_VERSION=v1.36.2+rke2r1
+
+# 安装 Ansible Collection 依赖
+make collections
+
+# 使用 Ansible check mode 按相同参数模拟部署
+make check RKE2_VERSION=v1.36.2+rke2r1
+
+# 正式安装
+make install RKE2_VERSION=v1.36.2+rke2r1
+```
+
+可以通过 Make 参数控制执行范围或传入临时变量：
+
+```bash
+make check LIMIT=masters EXTRA_VARS="rke2_debug=true"
+make install INVENTORY=inventory/hosts.yml VARS=config/cluster.yml
+```
+
+`make check` 使用 `ansible-playbook --check --diff`，不会执行正式安装。执行 `make install` 前仍应确认输出，并先在非生产环境验证目标 RKE2 版本。
+
 This playbook will deploy RKE2 to a single node acting as both server and agent, using the RKE2 version defined in the role defaults.
 
 ```yaml
@@ -410,7 +437,7 @@ This playbook will update an already deployed RKE2 cluster (inventory contains o
   hosts: all
   become: yes
   vars:
-    rke2_version: v1.35.1+rke2r1
+    rke2_version: v1.36.2+rke2r1
   roles:
      - role: lablabs.rke2
 

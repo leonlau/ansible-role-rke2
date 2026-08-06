@@ -1,0 +1,20 @@
+---
+- name: 部署生产 RKE2 集群
+  hosts: k8s_cluster
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: 检查生产部署必要参数
+      ansible.builtin.assert:
+        that:
+          - rke2_token | length >= 32
+          - rke2_token not in ['defaultSecret12345', 'CHANGE_ME_USE_AT_LEAST_32_RANDOM_CHARACTERS']
+          - rke2_api_ip != '192.0.2.10'
+        fail_msg: "请先在 config/cluster.yml 中设置安全令牌和机房 API VIP。"
+      run_once: true
+
+  tasks:
+    - name: 执行本地 RKE2 角色
+      ansible.builtin.include_role:
+        name: "{{ lookup('env', 'RKE2_ROLE_NAME') }}"

@@ -1,0 +1,29 @@
+---
+# 必须修改：至少 32 位随机字符串，例如 openssl rand -hex 32
+rke2_token: CHANGE_ME_USE_AT_LEAST_32_RANDOM_CHARACTERS
+
+# 必须修改：机房中预留给 Kubernetes API Server 的 VIP
+rke2_api_ip: 192.0.2.10
+
+# 三节点控制平面高可用；默认使用 Keepalived
+rke2_ha_mode: true
+rke2_ha_mode_keepalived: true
+rke2_ha_mode_kubevip: false
+
+# 离线构件由 Makefile 从控制端复制到节点
+rke2_airgap_mode: true
+rke2_artifact:
+  - sha256sum-{{ rke2_architecture }}.txt
+  - rke2.linux-{{ rke2_architecture }}.tar.gz
+rke2_airgap_copy_additional_tarballs:
+  - rke2-images-core.linux-{{ rke2_architecture }}.tar.zst
+  - rke2-images-cilium.linux-{{ rke2_architecture }}.tar.zst
+
+# 生产节点默认配置
+rke2_cni:
+  - cilium
+rke2_server_node_taints:
+  - CriticalAddonsOnly=true:NoExecute
+rke2_drain_node_during_upgrade: true
+rke2_wait_for_all_pods_to_be_ready: true
+rke2_download_kubeconf: true
